@@ -4,6 +4,7 @@ import os
 
 import mimetypes
 from io import FileIO, SEEK_SET
+from hashlib import md5
 from typing import Union
 
 import click
@@ -174,6 +175,14 @@ class File(FileIO):
         return ".".join(self.file_name.split(".")[:-1])
 
     @property
+    def checksum(self):
+        with open(self.path, "rb") as f:
+            file_hash = md5()
+            while chunk := f.read(8192):
+                file_hash.update(chunk)
+        return file_hash.hexdigest()
+
+    @property
     def is_custom_thumbnail(self):
         return self._thumbnail is not False and self._thumbnail is not None
 
@@ -186,6 +195,7 @@ class File(FileIO):
             "path": path,
             "file_name": self.file_name,
             "short_name": self.short_name,
+            "checksum": self.checksum
         }
         if self._caption is not None:
             self.__caption = self._caption.format_map(self.file_info)
